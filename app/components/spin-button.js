@@ -1,7 +1,7 @@
 import Ember from 'ember';
 import createSpinner from 'ember-spin-button/utils/spinner';
 
-const { set, get, isPresent, run } = Ember;
+const { computed, set, get, isPresent, run } = Ember;
 
 export default Ember.Component.extend({
   tagName: 'button',
@@ -17,17 +17,21 @@ export default Ember.Component.extend({
     'name',
     'type',
     'disabled',
+    'spinnerColor:data-spinner-color',
     'color:data-color',
     'buttonStyle:data-style'
   ],
 
   classNameBindings: ['inFlight:in-flight:ready', ':spin-button'],
 
+  disabled: computed.readOnly('inFlight'),
+  spinnerColor: null,
   _timer: null,
 
   click(evt) {
     evt.preventDefault();
     set(this, 'inFlight', true);
+    this.setupSpinner();
 
     if ('function' === typeof this.attrs.action) {
       let actionResult = this.attrs.action();
@@ -44,10 +48,10 @@ export default Ember.Component.extend({
     }
   },
 
-  didRender() {
-    this._super(...arguments);
-
+  setupSpinner() {
     let element = get(this, 'element');
+    if (!this.element) { return; }
+
     let inFlight = get(this, 'inFlight');
 
     if (inFlight) {
@@ -57,8 +61,13 @@ export default Ember.Component.extend({
         this.createSpinner(element);
       }
     } else {
-      this.setEnabled();
+      this.enable();
     }
+  },
+
+  didRender() {
+    this._super(...arguments);
+    this.setupSpinner();
   },
 
   createSpinner(element) {
@@ -72,13 +81,11 @@ export default Ember.Component.extend({
     let timeout = get(this, 'defaultTimout');
 
     if (timeout > 4) {
-      this._timer = run.later(this, this.setEnabled, timeout);
+      this._timer = run.later(this, this.enable, timeout);
     }
   },
 
-  disabled: Ember.computed.readOnly('inFlight'),
-
-  setEnabled() {
+  enable() {
     if (this._timer) { run.cancel(this._timer); }
 
     if (this._spinner) {
@@ -86,10 +93,8 @@ export default Ember.Component.extend({
       this._spinner = null;
     }
 
-    if (!get(this, 'isDestroyed')) {
-      this.setProperties({
-        inFlight: false
-      });
+    if (!this.isDestroyed && !this.isDestroying) {
+      set(this, 'inFlight', false);
     }
   },
 });
