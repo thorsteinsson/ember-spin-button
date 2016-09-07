@@ -1,7 +1,7 @@
 import Ember from 'ember';
 import createSpinner from 'ember-spin-button/utils/spinner';
 
-const { observer } = Ember;
+const { set, get, isPresent, run } = Ember;
 
 export default Ember.Component.extend({
   tagName: 'button',
@@ -14,47 +14,52 @@ export default Ember.Component.extend({
   startDelay: 100,
 
   attributeBindings: [
-    'disabled',
+    'name',
     'type',
+    'disabled',
     'color:data-color',
-    'buttonStyle:data-style',
+    'buttonStyle:data-style'
   ],
+
   classNameBindings: ['inFlight:in-flight:ready', ':spin-button'],
 
   _timer: null,
 
-  click: function (event) {
-    event.preventDefault();
-    this.set('inFlight', true);
+  click(evt) {
+    evt.preventDefault();
+    set(this, 'inFlight', true);
 
-    if (this.attrs && 'function' === typeof this.attrs.action) {
+    if ('function' === typeof this.attrs.action) {
       let actionResult = this.attrs.action();
 
-      if (Ember.isPresent(actionResult) &&
-          ('function' === typeof actionResult.finally)) {
-        actionResult.finally(() => { this.set('inFlight', false); });
+      if (isPresent(actionResult) && ('function' === typeof actionResult.finally)) {
+        actionResult.finally(() => {
+          if (this.isDestroying || this.isDestroyed) {
+            return;
+          }
+
+          set(this, 'inFlight', false);
+        });
       }
-    }else {
-      this.sendAction('action');
     }
   },
 
-  inFlightDidChange: observer('inFlight', function () {
-    var element = this.get('element');
-    if (!element) { return; }
+  didRender() {
+    this._super(...arguments);
 
-    var inFlight = this.get('inFlight');
+    let element = get(this, 'element');
+    let inFlight = get(this, 'inFlight');
 
     if (inFlight) {
-      if (this.get('startDelay') > 4) {
-        Ember.run.later(this, this.createSpinner, element, this.get('startDelay'));
-      }else {
+      if (get(this, 'startDelay') > 4) {
+        run.later(this, this.createSpinner, element, get(this, 'startDelay'));
+      } else {
         this.createSpinner(element);
       }
-    }else {
+    } else {
       this.setEnabled();
     }
-  }),
+  },
 
   createSpinner(element) {
     if (!this._spinner) {
@@ -62,27 +67,28 @@ export default Ember.Component.extend({
       this._spinner.spin(element.querySelector('.spin-button-spinner'));
     }
 
-    if (this._timer) { Ember.run.cancel(this._timer); }
+    if (this._timer) { run.cancel(this._timer); }
 
-    var timeout = this.get('defaultTimout');
+    let timeout = get(this, 'defaultTimout');
+
     if (timeout > 4) {
-      this._timer = Ember.run.later(this, this.setEnabled, timeout);
+      this._timer = run.later(this, this.setEnabled, timeout);
     }
   },
 
   disabled: Ember.computed.readOnly('inFlight'),
 
   setEnabled() {
-    if (this._timer) { Ember.run.cancel(this._timer); }
+    if (this._timer) { run.cancel(this._timer); }
 
     if (this._spinner) {
       this._spinner.stop();
       this._spinner = null;
     }
 
-    if (!this.get('isDestroyed')) {
+    if (!get(this, 'isDestroyed')) {
       this.setProperties({
-        inFlight: false,
+        inFlight: false
       });
     }
   },
