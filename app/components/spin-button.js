@@ -10,7 +10,6 @@ export default Ember.Component.extend({
   color: 'blue',
   buttonStyle: 'expand-right',
 
-  defaultTimout: 10E3,
   startDelay: 100,
 
   attributeBindings: [
@@ -30,71 +29,46 @@ export default Ember.Component.extend({
 
   click(evt) {
     evt.preventDefault();
-    set(this, 'inFlight', true);
-    this.setupSpinner();
 
-    if ('function' === typeof this.attrs.action) {
-      let actionResult = this.attrs.action();
+    this.attrs.action();
+  },
 
-      if (isPresent(actionResult) && ('function' === typeof actionResult.finally)) {
-        actionResult.finally(() => {
-          if (this.isDestroying || this.isDestroyed) {
-            return;
-          }
+  didInsertElement() {
+    this._super(...arguments);
 
-          set(this, 'inFlight', false);
-        });
-      }
+    if (!this._spinner) {
+      this._spinner = createSpinner(get(this, 'element'));
     }
   },
 
-  setupSpinner() {
-    let element = get(this, 'element');
-    if (!this.element) { return; }
+  didReceiveAttrs() {
+    this._super(...arguments);
 
+    this._timer = run.scheduleOnce('afterRender', this, this.stateChanged);
+  },
+
+  stateChanged() {
     let inFlight = get(this, 'inFlight');
 
-    if (inFlight) {
-      if (get(this, 'startDelay') > 4) {
-        run.later(this, this.createSpinner, element, get(this, 'startDelay'));
-      } else {
-        this.createSpinner(element);
-      }
+    if (!inFlight && this._spinner) {
+      this.stopSpinner();
     } else {
-      this.enable();
-    }
-  },
+      let element = get(this, 'element');
 
-  didRender() {
-    this._super(...arguments);
-    this.setupSpinner();
-  },
+      if (!this._spinner) {
+        this._spinner = createSpinner(element);
+      }
 
-  createSpinner(element) {
-    if (!this._spinner) {
-      this._spinner = createSpinner(element);
       this._spinner.spin(element.querySelector('.spin-button-spinner'));
     }
-
-    if (this._timer) { run.cancel(this._timer); }
-
-    let timeout = get(this, 'defaultTimout');
-
-    if (timeout > 4) {
-      this._timer = run.later(this, this.enable, timeout);
-    }
   },
 
-  enable() {
+  stopSpinner() {
     if (this._timer) { run.cancel(this._timer); }
 
     if (this._spinner) {
       this._spinner.stop();
       this._spinner = null;
-    }
-
-    if (!this.isDestroyed && !this.isDestroying) {
-      set(this, 'inFlight', false);
     }
   },
 });
