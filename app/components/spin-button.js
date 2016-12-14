@@ -9,6 +9,7 @@ export default Ember.Component.extend({
   inFlight: false,
   color: 'blue',
   buttonStyle: 'expand-right',
+  spinnerColor: null,
 
   defaultTimout: 10E3,
   startDelay: 100,
@@ -16,6 +17,7 @@ export default Ember.Component.extend({
   attributeBindings: [
     'disabled',
     'type',
+    'spinnerColor:data-spinner-color',
     'color:data-color',
     'buttonStyle:data-style',
   ],
