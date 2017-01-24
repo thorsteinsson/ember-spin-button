@@ -15,17 +15,21 @@ export default Ember.Component.extend({
   attributeBindings: [
     'name',
     'type',
-    'disabled',
+    '_disabled:disabled',
     'spinnerColor:data-spinner-color',
     'color:data-color',
     'buttonStyle:data-style'
   ],
 
   classNameBindings: ['inFlight:in-flight:ready', ':spin-button'],
-
-  disabled: computed.readOnly('inFlight'),
+  disabled: false,
   spinnerColor: null,
+
   _timer: null,
+
+  _disabled: computed('inFlight', 'disabled', function() {
+    return get(this, 'inFlight') || get(this, 'disabled');
+  }).readOnly(),
 
   click(evt) {
     evt.preventDefault();
