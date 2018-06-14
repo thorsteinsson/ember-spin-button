@@ -7,7 +7,7 @@ module.exports = {
   included: function(app) {
     this._super.included && this._super.included.apply(this, arguments);
     let host = this._findHost();
-    this.import(host.bowerDirectory + '/spin.js/spin.js');
+    this.import('node_modules/spin.js/spin.js');
     this.import('vendor/spinner.js', {
       exports: {
         spinner: ['default'],
