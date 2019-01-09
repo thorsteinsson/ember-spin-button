@@ -34,7 +34,11 @@ export default Ember.Component.extend({
   click(evt) {
     evt.preventDefault();
 
-    this.attrs.action();
+    if (this.attrs && 'function' === typeof this.attrs.action) {
+      this.attrs.action();
+    } else {
+      this.sendAction('action');
+    }
   },
 
   didInsertElement() {
@@ -68,11 +72,13 @@ export default Ember.Component.extend({
   },
 
   stopSpinner() {
-    if (this._timer) { run.cancel(this._timer); }
+    if (this._timer) {
+      run.cancel(this._timer);
+    }
 
     if (this._spinner) {
       this._spinner.stop();
       this._spinner = null;
     }
-  },
+  }
 });
