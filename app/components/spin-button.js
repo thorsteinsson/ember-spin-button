@@ -33,12 +33,7 @@ export default Ember.Component.extend({
 
   click(evt) {
     evt.preventDefault();
-
-    if (this.attrs && 'function' === typeof this.attrs.action) {
-      this.attrs.action();
-    } else {
-      this.sendAction('action');
-    }
+    this.action();
   },
 
   didInsertElement() {
